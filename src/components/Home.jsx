@@ -1,8 +1,8 @@
-// components/Home.js
 import React, { useState, useEffect } from 'react';
 import { fetchProducts } from '../data/api';
 import { Link } from 'react-router-dom';
-import './Home.css'; // Import your CSS file
+import Header from './Header';
+import './Home.css';
 
 function Home({ addToCart }) {
   const [products, setProducts] = useState([]);
@@ -11,7 +11,7 @@ function Home({ addToCart }) {
     async function fetchProductData() {
       try {
         const productsData = await fetchProducts();
-        setProducts(productsData);
+        setProducts(productsData.map(product => ({ ...product, addedToCart: false })));
       } catch (error) {
         // Handle error if needed
       }
@@ -20,10 +20,25 @@ function Home({ addToCart }) {
     fetchProductData();
   }, []);
 
+  const handleAddToCart = product => {
+    addToCart({ ...product, quantity: 1 });
+    setProducts(prevProducts =>
+      prevProducts.map(p =>
+        p.id === product.id ? { ...p, addedToCart: true } : p
+      )
+    );
+    setTimeout(() => {
+      setProducts(prevProducts =>
+        prevProducts.map(p =>
+          p.id === product.id ? { ...p, addedToCart: false } : p
+        )
+      );
+    }, 2000);
+  };
+
   return (
     <div>
-      <h2>Home Page</h2>
-      <h3>Featured Products</h3>
+      <Header />
       <div className="product-list">
         {products.map(product => (
           <div key={product.id} className="product-card">
@@ -32,15 +47,15 @@ function Home({ addToCart }) {
               <h4>{product.title}</h4>
               <p className="price">${product.price}</p>
             </Link>
-            <button onClick={() => addToCart({ ...product, quantity: 1 })}>
+            <button onClick={() => handleAddToCart(product)}>
               Add to Cart
             </button>
+            {product.addedToCart && (
+              <p className="added-to-cart-message">Product added to cart!</p>
+            )}
           </div>
         ))}
       </div>
-      <Link to="/cart" className="cart-link">
-        View Cart
-      </Link>
     </div>
   );
 }
